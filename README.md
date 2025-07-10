@@ -4,112 +4,67 @@
 
 ## Example
 
-### Your Stdio MCP code
+### Your Code (The Logic You Write)
 
 ```typescript
-// (Before Deploxy)
-// This is your original Stdio MCP server code,
-// which runs directly on the user's local machine.
-// e.g., `npx -y @your-org/mcp-server --apiKey=user-api-key`
+// (Your Stdio MCP server code)
 
-// Let's say we want to charge credits for each tool call.
+// With Deploxy, your business logic lives in one place:
+// your Stdio server. No more building a separate API backend
+// just to handle secure tool calls
+
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const toolName = request.params.name
   const apiKey = request.params.arguments.apiKey
 
-  switch (toolName) {
-    case 'awesome-stdio-mcp-tool':
-      // Ideally, we would implement the tool logic and credit
-      // deduction directly in this file.
-      // const toolResult = await awesomeTool();
-      // await deductCredit(apiKey);
-
-      // However, with a public Stdio MCP server, users can
-      // download the package, modify the source to remove the
-      // credit deduction logic, and run it locally.
-      // e.g., `node /path/to/mcp-server/modified.js`
-
-      // This makes it impossible to protect your business logic,
-      // enforce usage limits, or implement secure billing.
-      // Your intellectual property is exposed, and there's no
-      // reliable way to monetize your service.
-
-      // To securely implement a credit system, you must move the
-      // core logic to a private backend API. This is the problem
-      // Deploxy solves. We host your sensitive MCP server code
-      // in a secure, serverless environment, exposing it via a proxy.
-      const toolResult = await yourApiClient({ toolName, apiKey })
-      return toolResult
-
-    default: // handle error
+  if (toolName === 'awesome-tool') {
+    // ✅ Your logic is simple, direct, and 100% secure on Deploxy
+    const toolResult = await awesomeTool()
+    // You can connect DB directly. code running on Deploxy cloud
+    await deductCredit(apiKey) 
+    return toolResult
   }
 })
-
-async function yourApiClient({ toolName, apiKey }) {
-  const toolCallResponse = await fetch(
-    `https://api.your-server.com/${toolName}`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}` },
-    },
-  )
-  return toolCallResponse.json()
-}
 
 async function main() {
   const transport = new StdioServerTransport()
   await server.connect(transport)
 }
 
+// That's it. You write this simple, intuitive code
+// We handle the magic of securing it in the cloud
 main()
 ```
 
-### Your Distributed NPM Package
+### User's Code (The Proxy We Distribute)
 
 ```typescript
-// (After Deploxy)
-// After deploying to Deploxy, your distributed package
-// becomes a simple proxy. This is the code that now
-// runs on the user's local machine.
-// e.g., `npx -y @your-org/mcp-server --apiKey=user-api-key`
+// (Your Distributed package code)
 
-// Your business logic and credit deduction code now run
-// securely on the server-side. Users run this lightweight
-// proxy client, which forwards all requests to your hosted server.
+// When you deploy, we automatically transform your package.
+// Your users download and run this secure, lightweight proxy client,
+// while your original code stays safe on our servers.
+
+// To the end-user, nothing changes. They run the same command:
+// $ npx @your-org/mcp-server --your-args "user-api-key"
+
 function main() {
-  const proxyUrl = getProxyUrl(configs)
-  const headers = getHeaders(configs)
-  const stdioArgs = parseStdioArgs(configs)
-  const mcp = spawn(
-    'npx',
-    [
+  const stdioArgs = getArgsFromCmd()
+  const headers = getPreBuiltHeaders()
+  const stdioMcpServer = spawn('npx', [
       '-y',
       '@deploxy/proxy',
-      proxyUrl,
-      '--header',
+      'https://your-proxy.deploxy.com', // Your secure logic endpoint
+      '--headers',
       ...headers,
       '--stdio-args',
       ...stdioArgs,
     ],
     { stdio: 'inherit' },
   )
-
-  mcp.stdout.on('data', (data) => {
-    console.log(data)
-  })
-
-  mcp.stderr.on('data', (data) => {
-    console.error(data)
-  })
-
-  mcp.on('error', (error) => {
-    console.error(error)
-    process.exit(1)
-  })
-
-  mcp.on('exit', process.exit)
 }
 
+// This User-Facing Proxy -> [ DEPLOXY MAGIC ] -> Your Code
 main()
 ```
 
