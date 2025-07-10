@@ -6,6 +6,7 @@
     "type": "git",
     "url": "https://github.com/deploxy/proxy.git"
   },
+  "homepage": "https://deploxy.com",
   "type": "module",
   "bin": {
     "deploxy-proxy": "dist/index.js"
