@@ -1,0 +1,28 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Config files
+tsconfig.json
+.npmignore
+
+# Development files
+node_modules/
+.git/
+.gitignore
+
+# Test files
+test/
+tests/
+*.test.*
+*.spec.*
+
+# Documentation (except README)
+docs/
+CHANGELOG.md
+
+# Build artifacts
+*.tsbuildinfo
+.nyc_output/
+coverage/ 
