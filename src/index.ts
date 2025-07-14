@@ -9,6 +9,7 @@ import { streamableHttpToStdio } from './gateways/streamableHttpToStdio.js'
 import { headers } from './lib/headers.js'
 import { corsOrigin } from './lib/corsOrigin.js'
 import { getLogger } from './lib/getLogger.js'
+import { buildProxyUrl } from './lib/proxy-url.js'
 
 async function main() {
   const argv = yargs(hideBin(process.argv))
@@ -27,15 +28,15 @@ async function main() {
       type: 'string',
       description: 'SSE URL to connect to',
     })
-    .option('streamableHttp', {
+    .option('mcp-path', {
       type: 'string',
-      description: 'Streamable HTTP URL to connect to',
+      description: 'MCP path to connect to',
     })
-    .option('proxyUrl', {
+    .option('base-url', {
       type: 'string',
-      description: 'Proxy URL to connect to',
+      description: 'Base URL to connect to',
     })
-    .option('outputTransport', {
+    .option('output-transport', {
       type: 'string',
       choices: ['stdio', 'sse', 'ws'],
       default: () => {
@@ -43,35 +44,35 @@ async function main() {
 
         if (args.includes('--stdio')) return 'sse'
         if (args.includes('--sse')) return 'stdio'
-        if (args.includes('--streamableHttp')) return 'stdio'
-        if (args.includes('--proxyUrl')) return 'stdio'
+        if (args.includes('--mcp-path')) return 'stdio'
+        if (args.includes('--base-url')) return 'stdio'
 
         return 'stdio'
       },
       description:
-        'Transport for output. Default is "sse" when using --stdio and "stdio" when using --sse or --streamableHttp.',
+        'Transport for output. Default is "sse" when using --stdio and "stdio" when using --sse or --mcp-path.',
     })
     .option('port', {
       type: 'number',
       default: 8000,
       description: '(stdio→SSE, stdio→WS) Port for output MCP server',
     })
-    .option('baseUrl', {
+    .option('base-url', {
       type: 'string',
       default: '',
       description: '(stdio→SSE) Base URL for output MCP server',
     })
-    .option('ssePath', {
+    .option('sse-path', {
       type: 'string',
       default: '/sse',
       description: '(stdio→SSE) Path for SSE subscriptions',
     })
-    .option('messagePath', {
+    .option('message-path', {
       type: 'string',
       default: '/message',
       description: '(stdio→SSE, stdio→WS) Path for messages',
     })
-    .option('logLevel', {
+    .option('log-level', {
       choices: ['debug', 'info', 'none'] as const,
       default: 'info',
       description: 'Logging level',
@@ -81,7 +82,7 @@ async function main() {
       description:
         'Enable CORS. Use --cors with no values to allow all origins, or supply one or more allowed origins (e.g. --cors "http://example.com" or --cors "/example\\.com$/" for regex matching).',
     })
-    .option('healthEndpoint', {
+    .option('health-endpoint', {
       type: 'array',
       default: [],
       description:
@@ -103,10 +104,10 @@ async function main() {
 
   const hasStdio = Boolean(argv.stdio)
   const hasSse = Boolean(argv.sse)
-  let hasStreamableHttp = Boolean(argv.streamableHttp) // @deprecated
-  let hasProxyUrl = Boolean(argv.proxyUrl) // default
+  let hasMcpPath = Boolean(argv.mcpPath) // @deprecated
+  let hasBaseUrl = Boolean(argv.baseUrl) // default
 
-  const activeCount = [hasStdio, hasSse, hasStreamableHttp, hasProxyUrl].filter(
+  const activeCount = [hasStdio, hasSse, hasMcpPath, hasBaseUrl].filter(
     Boolean,
   ).length
 
@@ -117,11 +118,11 @@ async function main() {
 
   // if no input transport is specified, default to streamableHttp
   if (activeCount === 0) {
-    hasProxyUrl = true
+    hasBaseUrl = true
     argv.outputTransport = 'stdio'
   } else if (activeCount > 1) {
     logger.error(
-      'Error: Specify only one of --stdio, --sse, or --proxyUrl, not multiple',
+      'Error: Specify only one of --stdio, --sse, or --base-url, not multiple',
     )
     process.exit(1)
   }
@@ -131,6 +132,10 @@ async function main() {
   logger.info(`  - stdioArgs: ${argv.stdioArgs}`)
   logger.info(`--------------------------------`)
   logger.info(`  - RAW-ARGV: ${JSON.stringify(argv, null, 2)}`)
+  const parsedHeaders = headers({
+    argv,
+    logger,
+  })
 
   try {
     if (hasStdio) {
@@ -138,16 +143,13 @@ async function main() {
         await stdioToSse({
           stdioCmd: argv.stdio!,
           port: argv.port,
-          baseUrl: argv.baseUrl,
+          baseUrl: argv.baseUrl!,
           ssePath: argv.ssePath,
           messagePath: argv.messagePath,
           logger,
           corsOrigin: corsOrigin({ argv }),
           healthEndpoints: argv.healthEndpoint as string[],
-          headers: headers({
-            argv,
-            logger,
-          }),
+          headers: parsedHeaders,
         })
       } else if (argv.outputTransport === 'ws') {
         await stdioToWs({
@@ -167,24 +169,22 @@ async function main() {
         await sseToStdio({
           sseUrl: argv.sse!,
           logger,
-          headers: headers({
-            argv,
-            logger,
-          }),
+          headers: parsedHeaders,
         })
       } else {
         logger.error(`Error: sse→${argv.outputTransport} not supported`)
         process.exit(1)
       }
-    } else if (hasProxyUrl) {
+    } else if (hasBaseUrl) {
       if (argv.outputTransport === 'stdio') {
         await streamableHttpToStdio({
-          streamableHttpUrl: argv.proxyUrl!,
-          logger,
-          headers: headers({
-            argv,
-            logger,
+          streamableHttpUrl: buildProxyUrl({
+            baseUrl: argv.baseUrl!,
+            path: argv.mcpPath!,
+            headers: parsedHeaders,
           }),
+          logger,
+          headers: parsedHeaders,
         })
       } else {
         logger.error(
