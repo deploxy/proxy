@@ -1,6 +1,6 @@
 {
   "name": "@deploxy/proxy",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Run MCP stdio servers over Streamable HTTP",
   "repository": {
     "type": "git",

@@ -101,12 +101,9 @@ async function main() {
 
   const hasStdio = Boolean(argv.stdio)
   const hasSse = Boolean(argv.sse)
-  let hasMcpPath = Boolean(argv.mcpPath) // @deprecated
-  let hasBaseUrl = Boolean(argv.baseUrl) // default
+  const hasMcpPath = Boolean(argv.mcpPath) // @deprecated
 
-  const activeCount = [hasStdio, hasSse, hasMcpPath, hasBaseUrl].filter(
-    Boolean,
-  ).length
+  const activeCount = [hasStdio, hasSse, hasMcpPath].filter(Boolean).length
 
   const logger = getLogger({
     logLevel: argv.logLevel,
@@ -115,7 +112,6 @@ async function main() {
 
   // if no input transport is specified, default to streamableHttp
   if (activeCount === 0) {
-    hasBaseUrl = true
     argv.outputTransport = 'stdio'
   } else if (activeCount > 1) {
     logger.error(
@@ -172,7 +168,7 @@ async function main() {
         logger.error(`Error: sse→${argv.outputTransport} not supported`)
         process.exit(1)
       }
-    } else if (hasBaseUrl) {
+    } else if (hasMcpPath) {
       if (argv.outputTransport === 'stdio') {
         await streamableHttpToStdio({
           streamableHttpUrl: buildProxyUrl({

@@ -21,7 +21,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // ✅ Your logic is simple, direct, and 100% secure on Deploxy
     const toolResult = await awesomeTool()
     // You can connect DB directly. code running on Deploxy cloud
-    await deductCredit(apiKey) 
+    await deductCredit(apiKey)
     return toolResult
   }
 })
@@ -51,7 +51,9 @@ main()
 function main() {
   const stdioArgs = getArgsFromCmd()
   const headers = getPreBuiltHeaders()
-  const stdioMcpServer = spawn('npx', [
+  const stdioMcpServer = spawn(
+    'npx',
+    [
       '-y',
       '@deploxy/proxy',
       'https://your-proxy.deploxy.com', // Your secure logic endpoint
