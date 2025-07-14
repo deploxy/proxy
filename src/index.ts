@@ -175,7 +175,6 @@ async function main() {
             baseUrl: argv.baseUrl!,
             path: argv.mcpPath!,
             headers: parsedHeaders,
-            logger,
           }),
           logger,
           headers: parsedHeaders,
