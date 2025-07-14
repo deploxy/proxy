@@ -70,6 +70,7 @@ export async function streamableHttpToStdio(args: StreamableHttpToStdioArgs) {
 
   onSignals({ logger })
 
+  logger.info(`creating new URL object... ${streamableHttpUrl}`)
   const mcpTransport = new StreamableHTTPClientTransport(
     new URL(streamableHttpUrl),
     {

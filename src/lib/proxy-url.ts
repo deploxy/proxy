@@ -1,20 +1,31 @@
+import { Logger } from '../types.js'
+
 export function buildProxyUrl({
   baseUrl,
   path,
   headers,
+  logger,
 }: {
   baseUrl: string
   path: string
   headers: Record<string, any>
+  logger: Logger
 }) {
   const deploxyRegion = headers['x-deploxy-region']
   const deploxyPkgId = headers['x-deploxy-pkg-id']
 
   if (!deploxyRegion || !deploxyPkgId) {
-    return new URL(path, baseUrl).href
+    const proxyUrl = new URL(path, baseUrl).href
+    logger.info(`proxyHref: ${proxyUrl}`)
+    return proxyUrl
   }
 
   // Ensure remove double slash
   const proxyPath = path.startsWith('/') ? path.slice(1) : path
-  return new URL(`/${deploxyPkgId}/${deploxyRegion}/${proxyPath}`, baseUrl).href
+  const deploxyProxyUrl = new URL(
+    `/${deploxyPkgId}/${deploxyRegion}/${proxyPath}`,
+    baseUrl,
+  ).href
+  logger.info(`deploxyHref: ${deploxyProxyUrl}`)
+  return deploxyProxyUrl
 }

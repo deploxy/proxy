@@ -32,10 +32,6 @@ async function main() {
       type: 'string',
       description: 'MCP path to connect to',
     })
-    .option('base-url', {
-      type: 'string',
-      description: 'Base URL to connect to',
-    })
     .option('output-transport', {
       type: 'string',
       choices: ['stdio', 'sse', 'ws'],
@@ -60,7 +56,8 @@ async function main() {
     .option('base-url', {
       type: 'string',
       default: '',
-      description: '(stdio→SSE) Base URL for output MCP server',
+      description:
+        '(stdio→StreamableHTTP, stdio→SSE, stdio→WS) Base URL for output MCP server',
     })
     .option('sse-path', {
       type: 'string',
@@ -182,6 +179,7 @@ async function main() {
             baseUrl: argv.baseUrl!,
             path: argv.mcpPath!,
             headers: parsedHeaders,
+            logger,
           }),
           logger,
           headers: parsedHeaders,
