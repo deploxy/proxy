@@ -1,3 +1,5 @@
+const DEFAULT_REGION = 'us-east-1'
+
 export function buildProxyUrl({
   baseUrl,
   path,
@@ -7,14 +9,13 @@ export function buildProxyUrl({
   path: string
   headers: Record<string, any>
 }) {
-  const deploxyRegion = headers['x-deploxy-region']
   const deploxyPkgId = headers['x-deploxy-pkg-id']
-
-  if (!deploxyRegion || !deploxyPkgId) {
+  if (!deploxyPkgId) {
     const proxyUrl = new URL(path, baseUrl).href
     return proxyUrl
   }
 
+  const deploxyRegion = headers['x-deploxy-region'] || DEFAULT_REGION
   // Ensure avoid double slash
   const proxyPath = path.startsWith('/') ? path.slice(1) : path
   const deploxyProxyUrl = new URL(
