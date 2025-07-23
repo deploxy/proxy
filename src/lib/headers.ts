@@ -38,6 +38,7 @@ export const headers = ({
     header: (string | number)[]
     'stdio-args': (string | number)[]
     oauth2Bearer: string | undefined
+    baseUrl: string | undefined
   }
   logger: Logger
 }): Record<string, string> => {
@@ -49,6 +50,15 @@ export const headers = ({
   const stdioArgs = argv['stdio-args']
   if (stdioArgs && stdioArgs.length > 0) {
     headers['stdio-args'] = stdioArgs.join(' ')
+  }
+
+  // e.g., 'https://f2ed12a8-f75c-4d1f-9c31-3dc5569405b6.edge.deploxy.com/'
+  const baseUrl = argv['baseUrl']
+  // Get f2ed12a8-f75c-4d1f-9c31-3dc5569405b6
+  // split by . and get the first part and remove prefix 'https://'
+  const userId = baseUrl?.split('.').shift()?.replace('https://', '')?.trim()
+  if (baseUrl && userId) {
+    headers['x-deploxy-user-id'] = userId
   }
 
   if ('oauth2Bearer' in argv) {
