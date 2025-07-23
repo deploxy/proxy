@@ -1,4 +1,4 @@
-const DEFAULT_REGION = 'us-east-1'
+const FALLBACK_REGION = 'us-east-1'
 
 export function buildProxyUrl({
   baseUrl,
@@ -15,7 +15,10 @@ export function buildProxyUrl({
     return proxyUrl
   }
 
-  const deploxyRegion = headers['x-deploxy-region'] || DEFAULT_REGION
+  const deploxyRegion =
+    headers['x-deploxy-region'] ||
+    headers['x-deploxy-default-region'] ||
+    FALLBACK_REGION
   // Ensure avoid double slash
   const proxyPath = path.startsWith('/') ? path.slice(1) : path
   const deploxyProxyUrl = new URL(
